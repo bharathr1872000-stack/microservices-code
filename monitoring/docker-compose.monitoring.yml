@@ -1,0 +1,53 @@
+services:
+  node-exporter:
+    image: prom/node-exporter:v1.8.2
+    network_mode: host
+    pid: host
+    restart: unless-stopped
+    volumes:
+      - /:/host:ro,rslave
+    command:
+      - --path.rootfs=/host
+
+  blackbox:
+    image: prom/blackbox-exporter:v0.25.0
+    restart: unless-stopped
+    ports:
+      - "127.0.0.1:9115:9115"
+    volumes:
+      - ./blackbox.yml:/etc/blackbox/blackbox.yml:ro
+    command:
+      - --config.file=/etc/blackbox/blackbox.yml
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+
+  prometheus:
+    image: prom/prometheus:v2.53.1
+    restart: unless-stopped
+    ports:
+      - "127.0.0.1:9090:9090"
+    volumes:
+      - ./prometheus.yml:/etc/prometheus/prometheus.yml:ro
+      - promdata:/prometheus
+    command:
+      - --config.file=/etc/prometheus/prometheus.yml
+      - --storage.tsdb.retention.time=2d
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+
+  grafana:
+    image: grafana/grafana:11.1.0
+    restart: unless-stopped
+    ports:
+      - "127.0.0.1:3000:3000"
+    environment:
+      GF_SECURITY_ADMIN_PASSWORD: ${GRAFANA_PASSWORD:-admin}
+      GF_USERS_ALLOW_SIGN_UP: "false"
+    volumes:
+      - grafdata:/var/lib/grafana
+      - ./grafana/provisioning:/etc/grafana/provisioning:ro
+      - ./grafana/dashboards:/var/lib/grafana/dashboards:ro
+
+volumes:
+  promdata:
+  grafdata:
