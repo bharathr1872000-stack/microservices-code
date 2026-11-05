@@ -13,6 +13,7 @@ fi
 ACCOUNT=$(aws sts get-caller-identity --query Account --output text)
 export ECR="${ACCOUNT}.dkr.ecr.${REGION}.amazonaws.com"
 export TAG="$NEWTAG"
+printf 'ECR=%s\nTAG=%s\n' "$ECR" "$TAG" > .env
 
 aws ecr get-login-password --region "$REGION" | docker login --username AWS --password-stdin "$ECR"
 
